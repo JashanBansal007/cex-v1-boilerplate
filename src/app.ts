@@ -1,6 +1,9 @@
 import express from "express";
 import { signup, signin } from "./services/auth";
 import { placeOrder, cancelOrder, getDepth, getFills, getOrders, getOrderById } from "./services/order";
+import { handleServiceResult } from "./utils/response";
+import { requireUserId } from "./middleware/requireUserId";
+import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
 app.use(express.json());
@@ -8,70 +11,42 @@ app.use(express.json());
 app.post("/signup", (req, res) => {
   const { username, password } = req.body;
   const result = signup(username, password);
-  if (result.success) {
-    res.status(201).json(result);
-  } else {
-    res.status(400).json(result);
-  }
+  handleServiceResult(res, result, 201);
 });
 
 app.post("/signin", (req, res) => {
   const { username, password } = req.body;
   const result = signin(username, password);
-  if (result.success) {
-    res.status(200).json(result);
-  } else {
-    res.status(401).json(result);
-  }
+  handleServiceResult(res, result, 200, 401);
 });
 
 app.post("/order", (req, res) => {
   const { userId, symbol, side, price, quantity } = req.body;
   const result = placeOrder(userId, symbol, side, price, quantity);
-  if (result.success) {
-    res.status(201).json(result);
-  } else {
-    res.status(400).json(result);
-  }
+  handleServiceResult(res, result, 201);
 });
 
 app.get("/depth", (req, res) => {
   const symbol = req.query.symbol as string;
   const result = getDepth(symbol);
-  if (result.success) {
-    res.status(200).json(result);
-  } else {
-    res.status(400).json(result);
-  }
+  handleServiceResult(res, result);
 });
 
-app.get("/fills", (req, res) => {
+app.get("/fills", requireUserId, (req, res) => {
   const userId = req.query.userId as string;
-  if (!userId) {
-    res.status(400).json({ success: false, error: "userId is required" });
-    return;
-  }
   const fills = getFills(userId);
   res.status(200).json({ success: true, fills });
 });
 
-app.get("/orders", (req, res) => {
+app.get("/orders", requireUserId, (req, res) => {
   const userId = req.query.userId as string;
-  if (!userId) {
-    res.status(400).json({ success: false, error: "userId is required" });
-    return;
-  }
   const orders = getOrders(userId);
   res.status(200).json({ success: true, orders });
 });
 
-app.get("/order/:orderId", (req, res) => {
-  const { orderId } = req.params;
+app.get("/order/:orderId", requireUserId, (req, res) => {
+  const orderId = req.params.orderId as string;
   const userId = req.query.userId as string;
-  if (!userId) {
-    res.status(400).json({ success: false, error: "userId is required" });
-    return;
-  }
   const order = getOrderById(orderId, userId);
   if (order) {
     res.status(200).json({ success: true, order });
@@ -80,19 +55,13 @@ app.get("/order/:orderId", (req, res) => {
   }
 });
 
-app.delete("/order/:orderId", (req, res) => {
-  const { orderId } = req.params;
+app.delete("/order/:orderId", requireUserId, (req, res) => {
+  const orderId = req.params.orderId as string;
   const userId = req.query.userId as string;
-  if (!userId) {
-    res.status(400).json({ success: false, error: "userId is required" });
-    return;
-  }
   const result = cancelOrder(orderId, userId);
-  if (result.success) {
-    res.status(200).json(result);
-  } else {
-    res.status(400).json(result);
-  }
+  handleServiceResult(res, result);
 });
+
+app.use(errorHandler);
 
 export default app;
