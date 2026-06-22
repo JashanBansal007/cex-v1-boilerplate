@@ -161,7 +161,11 @@ function settleFill(
 ): void {
   const takerBalance = BALANCES[takerOrder.userId];
   const makerBalance = BALANCES[makerEntry.userId];
-  if (!takerBalance || !makerBalance) return;
+  if (!takerBalance || !makerBalance) {
+    throw new Error(
+      `Settlement failed: missing balance for ${!takerBalance ? "taker" : "maker"} (order ${takerOrder.id})`
+    );
+  }
 
   const cost = price * quantity;
 
