@@ -1,53 +1,7 @@
-import express from "express";
+import app from "./src/app";
 
-const app = express();
+const PORT = process.env.PORT || 3000;
 
-const BALANCES = {
-
-}
-
-const ORDERBOOKS = {
-    SOL: {},
-    BTC: {}
-}
-
-app.post("/signup", (req,res) => {
-
-})
-
-app.post("signin" , (req,res) => {
-
-})
-
-app.post("/order" , (req,res) => {
-
-})
-
-
-
-
-
-
-app.get("/depth" , (req,res) =>{
-
-})
-
-app.get("/fills",(req,res) =>{
-
-})
-
-app.get("/orders",(req,res) =>{
-
-})
-
-app.get("order/orderId",(req,res) =>{
-
-})
-
-
-
-
-app.delete("/order/orderId",(req,res) =>{
-
-})
-
+app.listen(PORT, () => {
+  console.log(`CEX server running on port ${PORT}`);
+});
