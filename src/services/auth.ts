@@ -1,11 +1,14 @@
 import { USERS, BALANCES } from "../store";
 import type { User } from "../types";
 import { randomUUID } from "crypto";
+import bcrypt from "bcrypt";
 
-export function signup(
+const BCRYPT_ROUNDS = 12;
+
+export async function signup(
   username: string,
   password: string
-): { success: true; user: Omit<User, "password"> } | { success: false; error: string } {
+): Promise<{ success: true; user: Omit<User, "password"> } | { success: false; error: string }> {
   if (!username || !password) {
     return { success: false, error: "Username and password are required" };
   }
@@ -19,10 +22,12 @@ export function signup(
     return { success: false, error: "Username already exists" };
   }
 
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
   const user: User = {
     id: randomUUID(),
     username,
-    password,
+    password: hashedPassword,
   };
 
   USERS.push(user);
@@ -36,16 +41,21 @@ export function signup(
   return { success: true, user: { id: user.id, username: user.username } };
 }
 
-export function signin(
+export async function signin(
   username: string,
   password: string
-): { success: true; user: Omit<User, "password"> } | { success: false; error: string } {
+): Promise<{ success: true; user: Omit<User, "password"> } | { success: false; error: string }> {
   if (!username || !password) {
     return { success: false, error: "Username and password are required" };
   }
 
-  const user = USERS.find((u) => u.username === username && u.password === password);
+  const user = USERS.find((u) => u.username === username);
   if (!user) {
+    return { success: false, error: "Invalid credentials" };
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) {
     return { success: false, error: "Invalid credentials" };
   }
 
